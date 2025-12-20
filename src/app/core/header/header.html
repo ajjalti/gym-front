@@ -1,0 +1,44 @@
+<header class="bg-white shadow-md sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-4 py-4">
+    <div class="flex items-center justify-between">
+      <h1 class="text-slate-800 flex items-center gap-2">
+        <div class="bg-gradient-to-br from-blue-500 to-blue-600 p-2 rounded-lg">
+          <lucide-icon [name]="icons.clients" class="w-6 h-6 text-white"></lucide-icon>
+        </div>
+        <span class="font-bold">Gestion de Gym</span>
+      </h1>
+
+      <button (click)="toggleMenu()" class="lg:hidden p-2 rounded-lg hover:bg-slate-100">
+        <lucide-icon [name]="isMobileMenuOpen ? icons.close : icons.menu" class="w-6 h-6"></lucide-icon>
+      </button>
+
+      <nav class="hidden lg:flex gap-2">
+        @for (tab of tabs; track tab.id) {
+          <button 
+            (click)="selectTab(tab.id)"
+            [class.text-blue-600]="activeTab === tab.id"
+            [class.bg-blue-50]="activeTab === tab.id"
+            class="px-4 py-2 rounded-lg flex items-center gap-2 transition-colors text-slate-600 hover:bg-slate-100 font-medium">
+            <lucide-icon [name]="tab.icon" class="w-4 h-4"></lucide-icon>
+            {{ tab.label }}
+          </button>
+        }
+      </nav>
+    </div>
+
+    @if (isMobileMenuOpen) {
+      <nav class="lg:hidden mt-4 space-y-2 border-t pt-4">
+        @for (tab of tabs; track tab.id) {
+          <button 
+            (click)="selectTab(tab.id)"
+            [class.bg-blue-50]="activeTab === tab.id"
+            [class.text-blue-600]="activeTab === tab.id"
+            class="w-full px-4 py-3 rounded-lg flex items-center gap-2 text-slate-600 font-medium">
+            <lucide-icon [name]="tab.icon" class="w-4 h-4"></lucide-icon>
+            {{ tab.label }}
+          </button>
+        }
+      </nav>
+    }
+  </div>
+</header>
