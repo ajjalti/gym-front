@@ -29,9 +29,9 @@ export class Header {
   };
 
   tabs = [
-    { id: 'dashboard', label: 'Dashboard', icon: this.iconPaths.dashboard },
+    { id: 'dashboard', label: 'Tableau De Bord', icon: this.iconPaths.dashboard },
     { id: 'clients', label: 'Clients', icon: this.iconPaths.clients },
-    { id: 'coachs', label: 'Coachs', icon: this.iconPaths.coachs },
+    { id: 'coachs', label: 'Entraineurs', icon: this.iconPaths.coachs },
     { id: 'seances', label: 'Séances', icon: this.iconPaths.seances },
   ];
 
