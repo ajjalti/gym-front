@@ -1,8 +1,8 @@
-import { Component, Input, computed, inject } from '@angular/core';
+import { Component, Input, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { trigger, transition, style, animate } from '@angular/animations';
-
+import { DashboardS } from '../../services/dashboard';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -23,13 +23,14 @@ import { trigger, transition, style, animate } from '@angular/animations';
     ])
   ]
 })
-export class Dashboard {
+export class Dashboard implements OnInit{
   private sanitizer = inject(DomSanitizer);
 
   @Input() clients: any[] = [];
   @Input() coachs: any[] = [];
   @Input() seances: any[] = [];
   @Input() abonnements: any[] = [];
+  record:any = signal(null);
 
   // Chemins SVG bruts
   private readonly rawIcons = {
@@ -41,6 +42,20 @@ export class Dashboard {
     trendingDown: `<polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/>`
   };
 
+  constructor(private dashboardService:DashboardS){}
+
+  ngOnInit(): void {
+    this.getRecords();
+  }
+
+  getRecords(){
+this.dashboardService.getAll().subscribe({
+  next:(res:any)=>{
+    this.record.set(res);
+  }
+})
+  }
+
   // Helper pour sécuriser le SVG
   private bypass(svg: string): SafeHtml {
     return this.sanitizer.bypassSecurityTrustHtml(svg);
@@ -48,15 +63,15 @@ export class Dashboard {
 
   // Signaux calculés
   stats = computed(() => {
-    const totalCA = this.calculateCA();
-    const moisCA = this.calculateCAMois();
-    const seancesSemaine = this.calculateSeancesSemaine();
+    const totalCA = (this.record().totalIncome ? this.record().totalIncome : 0.0)  - (this.record().totalSalary ? this.record().totalSalary : 0.0) ;
+    const moisCA = this.record().totalMonthIncome;
+
 
     return [
-      { title: 'Clients', value: this.clients.length, icon: this.bypass(this.rawIcons.users), color: 'blue', bgColor: 'bg-blue-50', iconBg: 'bg-blue-500', textColor: 'text-blue-600' },
-      { title: 'Coachs', value: this.coachs.length, icon: this.bypass(this.rawIcons.userCheck), color: 'purple', bgColor: 'bg-purple-50', iconBg: 'bg-purple-500', textColor: 'text-purple-600' },
-      { title: 'Séances cette semaine', value: seancesSemaine, icon: this.bypass(this.rawIcons.calendar), color: 'green', bgColor: 'bg-green-50', iconBg: 'bg-green-500', textColor: 'text-green-600' },
-      { title: 'Chiffre d\'affaires total', value: `${totalCA.toFixed(2)} €`, icon: this.bypass(this.rawIcons.dollarSign), color: 'orange', bgColor: 'bg-orange-50', iconBg: 'bg-orange-500', textColor: 'text-orange-600', subValue: `${moisCA.toFixed(2)} € ce mois`, subValueColor: 'text-orange-500' },
+      { title: 'Clients', value: this.record().clients, icon: this.bypass(this.rawIcons.users), color: 'blue', bgColor: 'bg-blue-50', iconBg: 'bg-blue-500', textColor: 'text-blue-600' },
+      { title: 'Coachs', value: this.record().coachs, icon: this.bypass(this.rawIcons.userCheck), color: 'purple', bgColor: 'bg-purple-50', iconBg: 'bg-purple-500', textColor: 'text-purple-600' },
+      { title: 'Séances cette semaine', value: this.record().seances, icon: this.bypass(this.rawIcons.calendar), color: 'green', bgColor: 'bg-green-50', iconBg: 'bg-green-500', textColor: 'text-green-600' },
+      { title: 'Chiffre d\'affaires total', value: `${totalCA.toFixed(2)} DH`, icon: this.bypass(this.rawIcons.dollarSign), color: 'orange', bgColor: 'bg-orange-50', iconBg: 'bg-orange-500', textColor: 'text-orange-600', subValue: ``, subValueColor: 'text-orange-500' },
     ];
   });
 
