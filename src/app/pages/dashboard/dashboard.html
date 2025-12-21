@@ -1,0 +1,45 @@
+<div class="space-y-6">
+  <div>
+    <h2 class="text-slate-800 mb-2 font-bold text-2xl">Tableau de Bord</h2>
+    <p class="text-slate-600 text-sm">Vue d'ensemble de votre gym</p>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    @for (stat of stats(); track stat.title) {
+      <div [@fadeInUp] class="{{stat.bgColor}} rounded-xl p-6 border-2 border-{{stat.color}}-100 hover:shadow-lg transition-all hover:scale-[1.02]">
+        <div class="flex items-start justify-between mb-4">
+          <div class="{{stat.iconBg}} p-3 rounded-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" [innerHTML]="stat.icon"></svg>
+          </div>
+        </div>
+        <div>
+          <p class="text-slate-600 text-sm mb-1">{{stat.title}}</p>
+          <p class="{{stat.textColor}} text-3xl font-bold">{{stat.value}}</p>
+          @if (stat.subValue) {
+            <p class="text-xs {{stat.subValueColor}} mt-1">{{stat.subValue}}</p>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+    <h3 class="text-slate-800 mb-4 font-semibold">Aperçu Financier</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div [@fadeInLeft] class="bg-green-50 rounded-lg p-4 border border-green-100 flex items-center justify-between">
+        <div>
+          <p class="text-slate-600 text-sm mb-1">Revenus totaux</p>
+          <p class="text-green-600 text-2xl font-bold">{{chiffreAffairesTotal().toFixed(2)}} €</p>
+        </div>
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-600" [innerHTML]="iconTrendingUp()"></svg>
+      </div>
+      <div [@fadeInLeft] class="bg-orange-50 rounded-lg p-4 border border-orange-100 flex items-center justify-between">
+        <div>
+          <p class="text-slate-600 text-sm mb-1">Paiements en attente</p>
+          <p class="text-orange-600 text-2xl font-bold">{{paiementsEnAttente().toFixed(2)}} €</p>
+        </div>
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-orange-600" [innerHTML]="iconTrendingDown()"></svg>
+      </div>
+    </div>
+  </div>
+</div>
