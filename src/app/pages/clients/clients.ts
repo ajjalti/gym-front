@@ -1,8 +1,10 @@
-import { Component, signal, computed, inject } from '@angular/core';
+import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { trigger, transition, style, animate, query, stagger } from '@angular/animations';
+import { Client } from '../../services/client';
+import Swal from 'sweetalert2';
 
 
 @Component({
@@ -30,15 +32,17 @@ import { trigger, transition, style, animate, query, stagger } from '@angular/an
     ])
   ]
 })
-export class Clients {
+export class Clients implements OnInit{
   private fb = inject(FormBuilder);
   private sanitizer = inject(DomSanitizer);
 
   // État des données (Signals)
-  clients = signal<any[]>([
-    { id: '1', numeroClient: 'C001', nom: 'Jean Dupont', email: 'jean.dupont@email.com', dateInscription: '2025-01-15' },
-    { id: '2', numeroClient: 'C002', nom: 'Marie Martin', email: 'marie.martin@email.com', dateInscription: '2025-02-01' },
-  ]);
+  clients = signal<any[]>([]);
+
+  
+    // { id: '1', numeroClient: 'C001', nom: 'Jean Dupont', email: 'jean.dupont@email.com', dateInscription: '2025-01-15' },
+    // { id: '2', numeroClient: 'C002', nom: 'Marie Martin', email: 'marie.martin@email.com', dateInscription: '2025-02-01' },
+ 
 
   abonnements = signal<any[]>([
     {
@@ -68,9 +72,11 @@ export class Clients {
 
   // Formulaires
   clientForm = this.fb.group({
-    nom: ['', Validators.required],
+    fullName: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
-    dateInscription: [new Date().toISOString().split('T')[0], Validators.required]
+    phone:['',Validators.required],
+    clientNumber:['',Validators.required],
+    inscriptionDate: [new Date().toISOString().split('T')[0], Validators.required]
   });
 
   paiementForm = this.fb.group({
@@ -110,6 +116,20 @@ export class Clients {
     alert: this.bypass(`<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>`)
   };
 
+  constructor(private clientservice:Client){}
+
+  ngOnInit(): void {
+    this.getAllClient();
+  }
+
+  getAllClient(){
+    this.clientservice.getAll().subscribe({
+      next:(res:any)=>{
+        this.clients.set(res);
+      }
+    })
+  }
+
   private bypass(svg: string) { return this.sanitizer.bypassSecurityTrustHtml(svg); }
 
   // --- LOGIQUE MÉTIER ---
@@ -133,21 +153,39 @@ export class Clients {
   handleClientSubmit() {
     if (this.clientForm.invalid) return;
     const data = this.clientForm.value as any;
-
     if (this.editingClient()) {
-      this.clients.update(list => list.map(c => c.id === this.editingClient()?.id ? { ...c, ...data } : c));
-    } else {
-      const newClient = { id: Date.now().toString(), numeroClient: `C${String(this.clients().length + 1).padStart(3, '0')}`, ...data };
-      this.clients.update(list => [...list, newClient]);
+      data.id=this.editingClient().id;
+      // this.clients.update(list => list.map(c => c.id === this.editingClient()?.id ? { ...c, ...data } : c));
     }
+    this.clientservice.save(data).subscribe({
+      next:(res:any)=>{
+        this.getAllClient();
+      }
+    })
     this.closeClientForm();
   }
 
-  handleDeleteClient(id: string, event: Event) {
+  async handleDeleteClient(id: string, event: Event) {
     event.stopPropagation();
-    this.clients.update(list => list.filter(c => c.id !== id));
-    this.abonnements.update(list => list.filter(a => a.clientId !== id));
-    if (this.selectedClient()?.id === id) this.selectedClient.set(null);
+    let result  = await Swal.fire({
+      title: "Voulez vous supprimmer cet client",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Oui",
+      cancelButtonText: "Annuler",
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+    });
+    if(!result.isConfirmed) return;
+    
+    this.clientservice.delete(id).subscribe({
+      next:()=>{
+        this.getAllClient();
+      }
+    })
+    // this.clients.update(list => list.filter(c => c.id !== id));
+    // this.abonnements.update(list => list.filter(a => a.clientId !== id));
+    // if (this.selectedClient()?.id === id) this.selectedClient.set(null);
   }
 
   // Handlers Abonnements
@@ -194,7 +232,7 @@ export class Clients {
       this.clientForm.patchValue(client as any);
     } else {
       this.editingClient.set(null);
-      this.clientForm.reset({ dateInscription: new Date().toISOString().split('T')[0] });
+      this.clientForm.reset({ inscriptionDate: new Date().toISOString().split('T')[0] });
     }
     this.isFormOpen.set(true);
   }

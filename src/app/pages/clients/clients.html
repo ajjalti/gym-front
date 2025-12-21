@@ -73,16 +73,17 @@
       @for (client of clients(); track client.id) {
         <div (click)="selectedClient.set(client)" class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md cursor-pointer transition-all">
           <div class="flex justify-between items-start mb-4">
-            <div class="bg-blue-50 text-blue-600 p-2 rounded-lg font-bold">#{{client.numeroClient}}</div>
+            <div class="bg-blue-50 text-blue-600 p-2 rounded-lg font-bold">#{{client.clientNumber}}</div>
             <div class="flex gap-1">
               <button (click)="openClientForm(client); $event.stopPropagation()" class="p-2 hover:text-blue-600"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [innerHTML]="icons['edit']"></svg></button>
               <button (click)="handleDeleteClient(client.id, $event)" class="p-2 hover:text-red-600"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [innerHTML]="icons['trash']"></svg></button>
             </div>
           </div>
-          <h3 class="font-bold text-lg mb-2">{{client.nom}}</h3>
+          <h3 class="font-bold text-lg mb-2">{{client.fullName}}</h3>
           <div class="text-sm text-slate-500 space-y-1">
             <p>{{client.email}}</p>
-            <p>Inscrit le {{client.dateInscription | date:'mediumDate'}}</p>
+            <p>{{client.phone}}</p>
+            <p>Inscrit le {{client.inscriptionDate | date:'mediumDate'}}</p>
           </div>
         </div>
       }
@@ -94,13 +95,21 @@
       <div class="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl">
         <h3 class="text-xl font-bold mb-6">{{editingClient() ? 'Modifier' : 'Nouveau'}} Client</h3>
         <form [formGroup]="clientForm" (ngSubmit)="handleClientSubmit()" class="space-y-4">
+                      <div>
+            <label class="block text-sm font-medium mb-1">Numéro client</label>
+            <input formControlName="clientNumber" type="text" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+          </div>
           <div>
             <label class="block text-sm font-medium mb-1">Nom Complet</label>
-            <input formControlName="nom" type="text" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+            <input formControlName="fullName" type="text" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
           </div>
           <div>
             <label class="block text-sm font-medium mb-1">Email</label>
             <input formControlName="email" type="email" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+          </div>
+                    <div>
+            <label class="block text-sm font-medium mb-1">Téléphone</label>
+            <input formControlName="phone" type="text" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
           </div>
           <div class="flex gap-4 pt-4">
             <button type="button" (click)="closeClientForm()" class="flex-1 py-3 text-slate-600 font-medium">Annuler</button>
