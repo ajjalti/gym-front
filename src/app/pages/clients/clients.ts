@@ -5,7 +5,8 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { trigger, transition, style, animate, query, stagger } from '@angular/animations';
 import { Client } from '../../services/client';
 import Swal from 'sweetalert2';
-
+import { Abonnement } from '../../services/abonnement';
+import { Paiement } from '../../services/paiement';
 
 @Component({
   selector: 'app-clients',
@@ -35,14 +36,11 @@ import Swal from 'sweetalert2';
 export class Clients implements OnInit{
   private fb = inject(FormBuilder);
   private sanitizer = inject(DomSanitizer);
+  private abonnementService = inject(Abonnement);
+  private paiementService = inject(Paiement);
 
   // État des données (Signals)
   clients = signal<any[]>([]);
-
-  
-    // { id: '1', numeroClient: 'C001', nom: 'Jean Dupont', email: 'jean.dupont@email.com', dateInscription: '2025-01-15' },
-    // { id: '2', numeroClient: 'C002', nom: 'Marie Martin', email: 'marie.martin@email.com', dateInscription: '2025-02-01' },
- 
 
   abonnements = signal<any[]>([
     {
@@ -60,7 +58,7 @@ export class Clients implements OnInit{
   isFormOpen = signal(false);
   isPaiementFormOpen = signal(false);
   isAbonnementFormOpen = signal(false);
-  
+
   editingClient = signal<any>(null);
   editingPaiement = signal<{ abonnementId: string; paiement: any } | null>(null);
   editingAbonnement = signal<any>(null);
@@ -82,9 +80,7 @@ export class Clients implements OnInit{
   paiementForm = this.fb.group({
     datePaiement: [new Date().toISOString().split('T')[0]],
     montant: [0, [Validators.required, Validators.min(0)]],
-    modePaiement: [''],
-    dateEcheance: [new Date().toISOString().split('T')[0], Validators.required],
-    statut: ['en_attente' as 'payé' | 'en_attente', Validators.required]
+    statut: ['en_attente', Validators.required]
   });
 
   abonnementForm = this.fb.group({
@@ -135,20 +131,19 @@ export class Clients implements OnInit{
   // --- LOGIQUE MÉTIER ---
 
   filteredPaiements = computed(() => {
-    const selected = this.selectedClient();
-    if (!selected) return [];
-    const abo = this.abonnements().find(a => a.clientId === selected.id);
-    if (!abo) return [];
+    // 1. Njibo l-data l-asliya
+    const allPaiements = this.paiementsDuClient();
+    const currentFilter = this.filterStatut();
 
-    return abo.paiements.filter((p:any) => {
-      if (this.filterStatut() !== 'tous' && p.statut !== this.filterStatut()) return false;
-      const date = p.statut === 'payé' ? p.datePaiement : p.dateEcheance;
-      if (this.filterDateDebut() && date < this.filterDateDebut()) return false;
-      if (this.filterDateFin() && date > this.filterDateFin()) return false;
-      return true;
+    // 2. Ila kan l-filter 'tous', rje' kolshi
+    if (currentFilter === 'tous') return allPaiements;
+
+    // 3. Filter l-data
+    return allPaiements.filter((p: any) => {
+      // Mat-nsach l-accent 'payé' bhal li 3ndek f l-JSON
+      return p.statut === currentFilter;
     });
   });
-
   // Handlers Clients
   handleClientSubmit() {
     if (this.clientForm.invalid) return;
@@ -177,7 +172,7 @@ export class Clients implements OnInit{
       cancelButtonColor: "#d33",
     });
     if(!result.isConfirmed) return;
-    
+
     this.clientservice.delete(id).subscribe({
       next:()=>{
         this.getAllClient();
@@ -190,9 +185,12 @@ export class Clients implements OnInit{
 
   // Handlers Abonnements
   handleTypeChange(type: string) {
-    const selected = this.typesAbonnement.find(t => t.label === type);
+    const selected = this.typesAbonnement.find(t => t.label.toUpperCase() === type.toUpperCase());
     if (selected) {
-      this.abonnementForm.patchValue({ prix: selected.prixSuggere, dureeMois: selected.duree });
+      this.abonnementForm.patchValue({
+        prix: selected.prixSuggere,
+        dureeMois: selected.duree
+      });
     }
   }
 
@@ -201,27 +199,52 @@ export class Clients implements OnInit{
     if (!client || this.abonnementForm.invalid) return;
 
     const val = this.abonnementForm.value as any;
-    const endDate = new Date(val.dateDebut);
-    endDate.setMonth(endDate.getMonth() + val.dureeMois);
-    const dateFin = endDate.toISOString().split('T')[0];
+    const abonnementData = {
+      ...val,
+      durreMois: val.dureeMois, // Sllah smiya hna ila kant durreMois f backend
+      client: { id: client.id }
+    };
 
     if (this.editingAbonnement()) {
-      this.abonnements.update(list => list.map(a => a.id === this.editingAbonnement()?.id ? { ...a, ...val, dateFin } : a));
+      // Logic dyal Modification (UPDATE)
+      const id = this.editingAbonnement().id;
+      // Hna t-qder t-zid service.update(id, abonnementData) ila 3ndek f backend
+      this.abonnementService.save({ ...abonnementData, id: id }).subscribe({
+        next: (res) => {
+          Swal.fire('Modifié', 'L\'abonnement a été mis à jour', 'success');
+          this.selectClient(client); // Refresh data
+          this.isAbonnementFormOpen.set(false);
+        }
+      });
     } else {
-      const newAbo: any = { id: Date.now().toString(), clientId: client.id, ...val, dateFin, paiements: [] };
-      this.abonnements.update(list => [...list, newAbo]);
+      // Logic dyal Création (Dakechi li derti qbila)
+      this.abonnementService.save(abonnementData).subscribe({
+        next: (res) => {
+          Swal.fire('Ajouté', 'Abonnement créé avec succès', 'success');
+          this.selectClient(client);
+          this.isAbonnementFormOpen.set(false);
+        }
+      });
     }
-    this.isAbonnementFormOpen.set(false);
-  }
-
-  // Helper getters
-  getAboForClient(clientId: string) {
-    return this.abonnements().find(a => a.clientId === clientId);
+  }  // Helper getters
+  getAboForClient(clientId: any) {
+    return this.abonnements().find(a => a.client && a.client.id == clientId);
   }
 
   getTotals(abo: any) {
-    const paye = abo.paiements.filter((p:any) => p.statut === 'payé').reduce((s:any, p:any) => s + p.montant, 0);
-    const restant = abo.paiements.filter((p:any) => p.statut === 'en_attente').reduce((s:any, p:any) => s + p.montant, 0);
+    // Ila makanch abo awla makayench abo.paiements, rj3 0
+    if (!abo || !abo.paiements) return { paye: 0, restant: 0 };
+
+    const paiements = abo.paiements || [];
+
+    const paye = paiements
+      .filter((p: any) => p && p.statut === 'payé')
+      .reduce((s: number, p: any) => s + (p.montant || 0), 0);
+
+    const restant = paiements
+      .filter((p: any) => p && p.statut === 'en_attente')
+      .reduce((s: number, p: any) => s + (p.montant || 0), 0);
+
     return { paye, restant };
   }
 
@@ -238,4 +261,172 @@ export class Clients implements OnInit{
   }
 
   closeClientForm() { this.isFormOpen.set(false); this.editingClient.set(null); }
+
+  currentAbonnement = signal<any>(null);
+  selectClient(client: any) {
+    this.selectedClient.set(client);
+
+    // Njibo l-abonnement d had l-client
+    this.abonnementService.getAbonnementsByClient(client.id).subscribe({
+      next: (data: any) => {
+        // Data jaya k-objet wahed men l-backend, walakin hna bghina n-7attoha f lista
+        // bach t-khdem m3a .find() f l-HTML
+        this.abonnements.set(Array.isArray(data) ? data : [data]);
+
+        // Update hta currentAbonnement bach t-khdem l-modal d paiement
+        if (data) {
+          this.currentAbonnement.set(Array.isArray(data) ? data[0] : data);
+
+          // Njibo les paiements
+          const aboId = Array.isArray(data) ? data[0].id : data.id;
+          this.paiementService.getByAbonnement(aboId).subscribe(res => {
+            this.paiementsDuClient.set(res);
+          });
+        }
+      },
+      error: () => {
+        this.abonnements.set([]);
+        this.currentAbonnement.set(null);
+        this.paiementsDuClient.set([]);
+      }
+    });
+  }  async handleDeleteAbonnement(id: any, event: Event) {
+    event.stopPropagation(); // Bach may-t-selectach l-client fach t-cliki delete
+
+    const result = await Swal.fire({
+      title: 'Supprimer l\'abonnement ?',
+      text: "Cette action est irréversible et supprimera également les paiements associés.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Oui, supprimer',
+      cancelButtonText: 'Annuler'
+    });
+
+    if (result.isConfirmed) {
+      this.abonnementService.delete(id).subscribe({
+        next: () => {
+          Swal.fire('Supprimé!', 'L\'abonnement a été supprimé.', 'success');
+
+          // Refresh l-affichage
+          this.abonnements.update(list => list.filter(a => a.id !== id));
+          // Reset l-abonnement sélectionné ila bghiti
+          this.selectClient(this.selectedClient());
+        },
+        error: (err) => {
+          console.error(err);
+          Swal.fire('Erreur', 'Impossible de supprimer l\'abonnement.', 'error');
+        }
+      });
+    }
+  }
+  openAbonnementForm(abo?: any) {
+    if (abo) {
+      // 1. N-stockiw l-abonnement li khdamin 3lih
+      this.editingAbonnement.set(abo);
+
+      // 2. N-3ammrou l-formulaire b l-data d l-backend
+      this.abonnementForm.patchValue({
+        type: abo.type,
+        prix: abo.prix,
+        dureeMois: abo.durreMois, // Takked men s-smiya dyal s-champ
+        dateDebut: abo.dateDebut
+      });
+    } else {
+      // Ila knti t-creer wahed jdid
+      this.editingAbonnement.set(null);
+      this.abonnementForm.reset({
+        dateDebut: new Date().toISOString().split('T')[0]
+      });
+    }
+    this.isAbonnementFormOpen.set(true);
+  }
+
+  openPaiementForm(abo: any) {
+    this.editingAbonnement.set(abo);
+    this.editingPaiement.set(null); // Bach n-akkdou beli hada jdid machi edit
+    this.paiementForm.reset({
+      datePaiement: new Date().toISOString().split('T')[0],
+      montant: 0,
+      statut: 'en_attente'
+    });
+    this.isPaiementFormOpen.set(true);
+  }
+
+  openPaiementEdit(p: any) {
+    this.editingPaiement.set(p); // N-stockiw l-paiement li ghadi n-modifiw
+    this.paiementForm.patchValue({
+      datePaiement: p.datePaiement,
+      montant: p.montant,
+      statut: p.statut
+    });
+    this.isPaiementFormOpen.set(true);
+  }
+
+// Update handlePaiementSubmit bach i-3ref wach ghadi i-dir Save awla Update
+  handlePaiementSubmit() {
+    if (this.paiementForm.invalid) return;
+
+    const val = this.paiementForm.value;
+    const pData = {
+      ...val,
+      abonnement: { id: this.currentAbonnement().id }
+    };
+
+    // Check wach edit awla jdid
+    if (this.editingPaiement()) {
+      // Kan-diro (this.editingPaiement() as any).id bach may-ebqach hmer
+      const id = (this.editingPaiement() as any).id;
+
+      this.paiementService.savePaiement({ ...pData, id: id }).subscribe({
+        next: () => {
+          Swal.fire('Modifié', 'Paiement mis à jour', 'success');
+          this.isPaiementFormOpen.set(false);
+          this.selectClient(this.selectedClient());
+        }
+      });
+    } else {
+      // CRÉATION (Dakechi li kanti derti qbila)
+      this.paiementService.savePaiement(pData).subscribe({
+        next: () => {
+          Swal.fire('Ajouté', 'Paiement enregistré', 'success');
+          this.isPaiementFormOpen.set(false);
+          this.selectClient(this.selectedClient());
+        }
+      });
+    }
+  }
+
+  paiementsDuClient = signal<any[]>([]);
+
+  protected readonly JSON = JSON;
+
+  async handleDeletePaiement(id: any) {
+    const result = await Swal.fire({
+      title: 'Supprimer ce paiement ?',
+      text: "Cette action est irréversible !",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Oui, supprimer',
+      cancelButtonText: 'Annuler'
+    });
+
+    if (result.isConfirmed) {
+      this.paiementService.deletePaiement(id).subscribe({
+        next: () => {
+          Swal.fire('Supprimé!', 'Le paiement a été supprimé.', 'success');
+
+          // Refresh l-échéancier deghya
+          this.selectClient(this.selectedClient());
+        },
+        error: (err) => {
+          console.error(err);
+          Swal.fire('Erreur', 'Impossible de supprimer le paiement.', 'error');
+        }
+      });
+    }
+  }
 }
