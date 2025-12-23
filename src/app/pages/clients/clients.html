@@ -207,11 +207,11 @@
       <div class="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl">
         <h3 class="text-xl font-bold mb-6">{{ editingClient() ? 'Modifier' : 'Nouveau' }} Client</h3>
         <form [formGroup]="clientForm" (ngSubmit)="handleClientSubmit()" class="space-y-4">
-          <div>
+          <!-- <div>
             <label class="block text-sm font-medium mb-1">Numéro client</label>
             <input formControlName="clientNumber" type="text"
                    class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-          </div>
+          </div> -->
           <div>
             <label class="block text-sm font-medium mb-1">Nom Complet</label>
             <input formControlName="fullName" type="text"

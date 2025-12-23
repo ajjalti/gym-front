@@ -56,15 +56,13 @@ export class Clients implements OnInit{
 
   // Filtres
   filterStatut = signal<'tous' | 'payé' | 'en_attente'>('tous');
-  filterDateDebut = signal('');
-  filterDateFin = signal('');
 
   // Formulaires
   clientForm = this.fb.group({
     fullName: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
     phone:['',Validators.required],
-    clientNumber:['',Validators.required],
+    clientNumber:[null],
     inscriptionDate: [new Date().toISOString().split('T')[0], Validators.required]
   });
 
@@ -123,16 +121,11 @@ export class Clients implements OnInit{
   // --- LOGIQUE MÉTIER ---
 
   filteredPaiements = computed(() => {
-    // 1. Njibo l-data l-asliya
+
     const allPaiements = this.paiementsDuClient();
     const currentFilter = this.filterStatut();
-
-    // 2. Ila kan l-filter 'tous', rje' kolshi
     if (currentFilter === 'tous') return allPaiements;
-
-    // 3. Filter l-data
     return allPaiements.filter((p: any) => {
-      // Mat-nsach l-accent 'payé' bhal li 3ndek f l-JSON
       return p.statut === currentFilter;
     });
   });
@@ -145,7 +138,7 @@ export class Clients implements OnInit{
     }
     this.clientservice.save(data).subscribe({
       next:(res:any)=>{
-        if(this.editingClient()){
+        if(data.id){
           Swal.fire('Modifié', 'Client modifié avec succès', 'success');
         }else{
           Swal.fire('Ajouté', 'Client créé avec succès', 'success');
@@ -194,23 +187,20 @@ export class Clients implements OnInit{
     const val = this.abonnementForm.value as any;
     const abonnementData = {
       ...val,
-      durreMois: val.dureeMois, // Sllah smiya hna ila kant durreMois f backend
+      durreMois: val.dureeMois,
       client: { id: client.id }
     };
 
     if (this.editingAbonnement()) {
-      // Logic dyal Modification (UPDATE)
       const id = this.editingAbonnement().id;
-      // Hna t-qder t-zid service.update(id, abonnementData) ila 3ndek f backend
       this.abonnementService.save({ ...abonnementData, id: id }).subscribe({
         next: (res) => {
           Swal.fire('Modifié', 'L\'abonnement a été mis à jour', 'success');
-          this.selectClient(client); // Refresh data
+          this.selectClient(client);
           this.isAbonnementFormOpen.set(false);
         }
       });
     } else {
-      // Logic dyal Création (Dakechi li derti qbila)
       this.abonnementService.save(abonnementData).subscribe({
         next: (res) => {
           Swal.fire('Ajouté', 'Abonnement créé avec succès', 'success');
@@ -219,13 +209,12 @@ export class Clients implements OnInit{
         }
       });
     }
-  }  // Helper getters
+  }
   getAboForClient(clientId: any) {
     return this.abonnements().find(a => a.client && a.client.id == clientId);
   }
 
   getTotals(abo: any) {
-    // Ila makanch abo awla makayench abo.paiements, rj3 0
     if (!abo || !abo.paiements) return { paye: 0, restant: 0 };
 
     const paiements = abo.paiements || [];
@@ -258,19 +247,11 @@ export class Clients implements OnInit{
   currentAbonnement = signal<any>(null);
   selectClient(client: any) {
     this.selectedClient.set(client);
-
-    // Njibo l-abonnement d had l-client
     this.abonnementService.getAbonnementsByClient(client.id).subscribe({
       next: (data: any) => {
-        // Data jaya k-objet wahed men l-backend, walakin hna bghina n-7attoha f lista
-        // bach t-khdem m3a .find() f l-HTML
         this.abonnements.set(Array.isArray(data) ? data : [data]);
-
-        // Update hta currentAbonnement bach t-khdem l-modal d paiement
         if (data) {
           this.currentAbonnement.set(Array.isArray(data) ? data[0] : data);
-
-          // Njibo les paiements
           const aboId = Array.isArray(data) ? data[0].id : data.id;
           this.paiementService.getByAbonnement(aboId).subscribe(res => {
             this.paiementsDuClient.set(res);
@@ -284,7 +265,7 @@ export class Clients implements OnInit{
       }
     });
   }  async handleDeleteAbonnement(id: any, event: Event) {
-    event.stopPropagation(); // Bach may-t-selectach l-client fach t-cliki delete
+    event.stopPropagation();
 
     const result = await Swal.fire({
       title: 'Supprimer l\'abonnement ?',
@@ -301,10 +282,7 @@ export class Clients implements OnInit{
       this.abonnementService.delete(id).subscribe({
         next: () => {
           Swal.fire('Supprimé!', 'L\'abonnement a été supprimé.', 'success');
-
-          // Refresh l-affichage
           this.abonnements.update(list => list.filter(a => a.id !== id));
-          // Reset l-abonnement sélectionné ila bghiti
           this.selectClient(this.selectedClient());
         },
         error: (err) => {
@@ -316,18 +294,14 @@ export class Clients implements OnInit{
   }
   openAbonnementForm(abo?: any) {
     if (abo) {
-      // 1. N-stockiw l-abonnement li khdamin 3lih
       this.editingAbonnement.set(abo);
-
-      // 2. N-3ammrou l-formulaire b l-data d l-backend
       this.abonnementForm.patchValue({
         type: abo.type,
         prix: abo.prix,
-        dureeMois: abo.durreMois, // Takked men s-smiya dyal s-champ
+        dureeMois: abo.durreMois,
         dateDebut: abo.dateDebut
       });
     } else {
-      // Ila knti t-creer wahed jdid
       this.editingAbonnement.set(null);
       this.abonnementForm.reset({
         dateDebut: new Date().toISOString().split('T')[0]
@@ -338,7 +312,7 @@ export class Clients implements OnInit{
 
   openPaiementForm(abo: any) {
     this.editingAbonnement.set(abo);
-    this.editingPaiement.set(null); // Bach n-akkdou beli hada jdid machi edit
+    this.editingPaiement.set(null);
     this.paiementForm.reset({
       datePaiement: new Date().toISOString().split('T')[0],
       montant: 0,
@@ -348,7 +322,7 @@ export class Clients implements OnInit{
   }
 
   openPaiementEdit(p: any) {
-    this.editingPaiement.set(p); // N-stockiw l-paiement li ghadi n-modifiw
+    this.editingPaiement.set(p);
     this.paiementForm.patchValue({
       datePaiement: p.datePaiement,
       montant: p.montant,
@@ -356,8 +330,6 @@ export class Clients implements OnInit{
     });
     this.isPaiementFormOpen.set(true);
   }
-
-// Update handlePaiementSubmit bach i-3ref wach ghadi i-dir Save awla Update
   handlePaiementSubmit() {
     if (this.paiementForm.invalid) return;
 
@@ -366,10 +338,7 @@ export class Clients implements OnInit{
       ...val,
       abonnement: { id: this.currentAbonnement().id }
     };
-
-    // Check wach edit awla jdid
     if (this.editingPaiement()) {
-      // Kan-diro (this.editingPaiement() as any).id bach may-ebqach hmer
       const id = (this.editingPaiement() as any).id;
 
       this.paiementService.savePaiement({ ...pData, id: id }).subscribe({
@@ -380,7 +349,6 @@ export class Clients implements OnInit{
         }
       });
     } else {
-      // CRÉATION (Dakechi li kanti derti qbila)
       this.paiementService.savePaiement(pData).subscribe({
         next: () => {
           Swal.fire('Ajouté', 'Paiement enregistré', 'success');
@@ -411,8 +379,6 @@ export class Clients implements OnInit{
       this.paiementService.deletePaiement(id).subscribe({
         next: () => {
           Swal.fire('Supprimé!', 'Le paiement a été supprimé.', 'success');
-
-          // Refresh l-échéancier deghya
           this.selectClient(this.selectedClient());
         },
         error: (err) => {
