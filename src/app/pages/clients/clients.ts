@@ -16,24 +16,26 @@ import { Paiement } from '../../services/paiement';
   animations: [
     trigger('listAnimation', [
       transition('* <=> *', [
-        query(':enter', [
-          style({ opacity: 0, transform: 'translateY(20px)' }),
-          stagger('50ms', animate('300ms ease-out', style({ opacity: 1, transform: 'translateY(0)' })))
-        ], { optional: true })
-      ])
+        query(
+          ':enter',
+          [
+            style({ opacity: 0, transform: 'translateY(20px)' }),
+            stagger(
+              '50ms',
+              animate('300ms ease-out', style({ opacity: 1, transform: 'translateY(0)' }))
+            ),
+          ],
+          { optional: true }
+        ),
+      ]),
     ]),
     trigger('modalAnim', [
-      transition(':enter', [
-        style({ opacity: 0 }),
-        animate('200ms', style({ opacity: 1 }))
-      ]),
-      transition(':leave', [
-        animate('200ms', style({ opacity: 0 }))
-      ])
-    ])
-  ]
+      transition(':enter', [style({ opacity: 0 }), animate('200ms', style({ opacity: 1 }))]),
+      transition(':leave', [animate('200ms', style({ opacity: 0 }))]),
+    ]),
+  ],
 })
-export class Clients implements OnInit{
+export class Clients implements OnInit {
   private fb = inject(FormBuilder);
   private sanitizer = inject(DomSanitizer);
   private abonnementService = inject(Abonnement);
@@ -61,22 +63,22 @@ export class Clients implements OnInit{
   clientForm = this.fb.group({
     fullName: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
-    phone:['',Validators.required],
-    clientNumber:[null],
-    inscriptionDate: [new Date().toISOString().split('T')[0], Validators.required]
+    phone: ['', Validators.required],
+    clientNumber: [null],
+    inscriptionDate: [new Date().toISOString().split('T')[0], Validators.required],
   });
 
   paiementForm = this.fb.group({
     datePaiement: [new Date().toISOString().split('T')[0]],
     montant: [0, [Validators.required, Validators.min(0)]],
-    statut: ['en_attente', Validators.required]
+    statut: ['en_attente', Validators.required],
   });
 
   abonnementForm = this.fb.group({
     type: ['', Validators.required],
     prix: [0, Validators.required],
     dureeMois: [1, Validators.required],
-    dateDebut: [new Date().toISOString().split('T')[0], Validators.required]
+    dateDebut: [new Date().toISOString().split('T')[0], Validators.required],
   });
 
   // Données de configuration
@@ -90,38 +92,57 @@ export class Clients implements OnInit{
 
   // Icônes SVG
   readonly icons: Record<string, SafeHtml> = {
-    plus: this.bypass(`<line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>`),
-    trash: this.bypass(`<polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>`),
-    edit: this.bypass(`<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>`),
-    back: this.bypass(`<line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline>`),
-    mail: this.bypass(`<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline>`),
-    calendar: this.bypass(`<rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>`),
-    dollar: this.bypass(`<line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>`),
+    plus: this.bypass(
+      `<line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>`
+    ),
+    trash: this.bypass(
+      `<polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>`
+    ),
+    edit: this.bypass(
+      `<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>`
+    ),
+    back: this.bypass(
+      `<line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline>`
+    ),
+    mail: this.bypass(
+      `<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline>`
+    ),
+    calendar: this.bypass(
+      `<rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>`
+    ),
+    dollar: this.bypass(
+      `<line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>`
+    ),
     check: this.bypass(`<polyline points="20 6 9 17 4 12"></polyline>`),
-    alert: this.bypass(`<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>`),
-     phone: this.bypass(`<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l2.27-2.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>`)
+    alert: this.bypass(
+      `<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>`
+    ),
+    phone: this.bypass(
+      `<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l2.27-2.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>`
+    ),
   };
 
-  constructor(private clientservice:Client){}
+  constructor(private clientservice: Client) {}
 
   ngOnInit(): void {
     this.getAllClient();
   }
 
-  getAllClient(){
+  getAllClient() {
     this.clientservice.getAll().subscribe({
-      next:(res:any)=>{
+      next: (res: any) => {
         this.clients.set(res);
-      }
-    })
+      },
+    });
   }
 
-  private bypass(svg: string) { return this.sanitizer.bypassSecurityTrustHtml(svg); }
+  private bypass(svg: string) {
+    return this.sanitizer.bypassSecurityTrustHtml(svg);
+  }
 
   // --- LOGIQUE MÉTIER ---
 
   filteredPaiements = computed(() => {
-
     const allPaiements = this.paiementsDuClient();
     const currentFilter = this.filterStatut();
     if (currentFilter === 'tous') return allPaiements;
@@ -134,48 +155,56 @@ export class Clients implements OnInit{
     if (this.clientForm.invalid) return;
     const data = this.clientForm.value as any;
     if (this.editingClient()) {
-      data.id=this.editingClient().id;
+      data.id = this.editingClient().id;
     }
     this.clientservice.save(data).subscribe({
-      next:(res:any)=>{
-        if(data.id){
+      next: (res: any) => {
+        if (data.id) {
           Swal.fire('Modifié', 'Client modifié avec succès', 'success');
-        }else{
+        } else {
           Swal.fire('Ajouté', 'Client créé avec succès', 'success');
         }
         this.getAllClient();
-      }
-    })
+      },
+    });
     this.closeClientForm();
   }
 
   async handleDeleteClient(id: string, event: Event) {
     event.stopPropagation();
-    let result  = await Swal.fire({
-      title: "Voulez vous supprimmer cet client",
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonText: "Oui",
-      cancelButtonText: "Annuler",
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-    });
-    if(!result.isConfirmed) return;
+    this.clientservice.canBeDeleted(id).subscribe({
+      next: async (res: any) => {
+        if (res) {
+          let result = await Swal.fire({
+            title: 'Voulez vous supprimer cet client',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Oui',
+            cancelButtonText: 'Annuler',
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+          });
+          if (!result.isConfirmed) return;
 
-    this.clientservice.delete(id).subscribe({
-      next:()=>{
-        this.getAllClient();
-      }
-    })
+          this.clientservice.delete(id).subscribe({
+            next: () => {
+              this.getAllClient();
+            },
+          });
+        }else{
+          Swal.fire('Info','Vous ne pouvez pas supprimer cette client car il possède déjà un abonnement','info');
+        }
+      },
+    });
   }
 
   // Handlers Abonnements
   handleTypeChange(type: string) {
-    const selected = this.typesAbonnement.find(t => t.label.toUpperCase() === type.toUpperCase());
+    const selected = this.typesAbonnement.find((t) => t.label.toUpperCase() === type.toUpperCase());
     if (selected) {
       this.abonnementForm.patchValue({
         prix: selected.prixSuggere,
-        dureeMois: selected.duree
+        dureeMois: selected.duree,
       });
     }
   }
@@ -188,17 +217,17 @@ export class Clients implements OnInit{
     const abonnementData = {
       ...val,
       durreMois: val.dureeMois,
-      client: { id: client.id }
+      client: { id: client.id },
     };
 
     if (this.editingAbonnement()) {
       const id = this.editingAbonnement().id;
       this.abonnementService.save({ ...abonnementData, id: id }).subscribe({
         next: (res) => {
-          Swal.fire('Modifié', 'L\'abonnement a été mis à jour', 'success');
+          Swal.fire('Modifié', "L'abonnement a été mis à jour", 'success');
           this.selectClient(client);
           this.isAbonnementFormOpen.set(false);
-        }
+        },
       });
     } else {
       this.abonnementService.save(abonnementData).subscribe({
@@ -206,12 +235,12 @@ export class Clients implements OnInit{
           Swal.fire('Ajouté', 'Abonnement créé avec succès', 'success');
           this.selectClient(client);
           this.isAbonnementFormOpen.set(false);
-        }
+        },
       });
     }
   }
   getAboForClient(clientId: any) {
-    return this.abonnements().find(a => a.client && a.client.id == clientId);
+    return this.abonnements().find((a) => a.client && a.client.id == clientId);
   }
 
   getTotals(abo: any) {
@@ -242,7 +271,10 @@ export class Clients implements OnInit{
     this.isFormOpen.set(true);
   }
 
-  closeClientForm() { this.isFormOpen.set(false); this.editingClient.set(null); }
+  closeClientForm() {
+    this.isFormOpen.set(false);
+    this.editingClient.set(null);
+  }
 
   currentAbonnement = signal<any>(null);
   selectClient(client: any) {
@@ -253,7 +285,7 @@ export class Clients implements OnInit{
         if (data) {
           this.currentAbonnement.set(Array.isArray(data) ? data[0] : data);
           const aboId = Array.isArray(data) ? data[0].id : data.id;
-          this.paiementService.getByAbonnement(aboId).subscribe(res => {
+          this.paiementService.getByAbonnement(aboId).subscribe((res) => {
             this.paiementsDuClient.set(res);
           });
         }
@@ -262,33 +294,34 @@ export class Clients implements OnInit{
         this.abonnements.set([]);
         this.currentAbonnement.set(null);
         this.paiementsDuClient.set([]);
-      }
+      },
     });
-  }  async handleDeleteAbonnement(id: any, event: Event) {
+  }
+  async handleDeleteAbonnement(id: any, event: Event) {
     event.stopPropagation();
 
     const result = await Swal.fire({
-      title: 'Supprimer l\'abonnement ?',
-      text: "Cette action est irréversible et supprimera également les paiements associés.",
+      title: "Supprimer l'abonnement ?",
+      text: 'Cette action est irréversible et supprimera également les paiements associés.',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#d33',
       cancelButtonColor: '#3085d6',
       confirmButtonText: 'Oui, supprimer',
-      cancelButtonText: 'Annuler'
+      cancelButtonText: 'Annuler',
     });
 
     if (result.isConfirmed) {
       this.abonnementService.delete(id).subscribe({
         next: () => {
-          Swal.fire('Supprimé!', 'L\'abonnement a été supprimé.', 'success');
-          this.abonnements.update(list => list.filter(a => a.id !== id));
+          Swal.fire('Supprimé!', "L'abonnement a été supprimé.", 'success');
+          this.abonnements.update((list) => list.filter((a) => a.id !== id));
           this.selectClient(this.selectedClient());
         },
         error: (err) => {
           console.error(err);
-          Swal.fire('Erreur', 'Impossible de supprimer l\'abonnement.', 'error');
-        }
+          Swal.fire('Erreur', "Impossible de supprimer l'abonnement.", 'error');
+        },
       });
     }
   }
@@ -299,12 +332,12 @@ export class Clients implements OnInit{
         type: abo.type,
         prix: abo.prix,
         dureeMois: abo.durreMois,
-        dateDebut: abo.dateDebut
+        dateDebut: abo.dateDebut,
       });
     } else {
       this.editingAbonnement.set(null);
       this.abonnementForm.reset({
-        dateDebut: new Date().toISOString().split('T')[0]
+        dateDebut: new Date().toISOString().split('T')[0],
       });
     }
     this.isAbonnementFormOpen.set(true);
@@ -316,7 +349,7 @@ export class Clients implements OnInit{
     this.paiementForm.reset({
       datePaiement: new Date().toISOString().split('T')[0],
       montant: 0,
-      statut: 'en_attente'
+      statut: 'en_attente',
     });
     this.isPaiementFormOpen.set(true);
   }
@@ -326,7 +359,7 @@ export class Clients implements OnInit{
     this.paiementForm.patchValue({
       datePaiement: p.datePaiement,
       montant: p.montant,
-      statut: p.statut
+      statut: p.statut,
     });
     this.isPaiementFormOpen.set(true);
   }
@@ -336,7 +369,7 @@ export class Clients implements OnInit{
     const val = this.paiementForm.value;
     const pData = {
       ...val,
-      abonnement: { id: this.currentAbonnement().id }
+      abonnement: { id: this.currentAbonnement().id },
     };
     if (this.editingPaiement()) {
       const id = (this.editingPaiement() as any).id;
@@ -346,7 +379,7 @@ export class Clients implements OnInit{
           Swal.fire('Modifié', 'Paiement mis à jour', 'success');
           this.isPaiementFormOpen.set(false);
           this.selectClient(this.selectedClient());
-        }
+        },
       });
     } else {
       this.paiementService.savePaiement(pData).subscribe({
@@ -354,7 +387,7 @@ export class Clients implements OnInit{
           Swal.fire('Ajouté', 'Paiement enregistré', 'success');
           this.isPaiementFormOpen.set(false);
           this.selectClient(this.selectedClient());
-        }
+        },
       });
     }
   }
@@ -366,13 +399,13 @@ export class Clients implements OnInit{
   async handleDeletePaiement(id: any) {
     const result = await Swal.fire({
       title: 'Supprimer ce paiement ?',
-      text: "Cette action est irréversible !",
+      text: 'Cette action est irréversible !',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#d33',
       cancelButtonColor: '#3085d6',
       confirmButtonText: 'Oui, supprimer',
-      cancelButtonText: 'Annuler'
+      cancelButtonText: 'Annuler',
     });
 
     if (result.isConfirmed) {
@@ -384,7 +417,7 @@ export class Clients implements OnInit{
         error: (err) => {
           console.error(err);
           Swal.fire('Erreur', 'Impossible de supprimer le paiement.', 'error');
-        }
+        },
       });
     }
   }

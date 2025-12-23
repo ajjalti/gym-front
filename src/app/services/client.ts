@@ -23,5 +23,8 @@ export class Client {
   delete(clientId:any):Observable<any>{
     return this.http.delete(api+'/'+clientId)
   }
+  canBeDeleted(clientId:any):Observable<any>{
+    return this.http.get(api+"/canDelete/"+clientId);
+  }
   
 }

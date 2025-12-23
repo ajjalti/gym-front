@@ -22,4 +22,7 @@ export class Coach {
   delete(coachId:any):Observable<any>{
     return this.http.delete(api+'/'+coachId)
   }
+    canBeDeleted(coachId:any):Observable<any>{
+      return this.http.get(api+"/canDelete/"+coachId);
+    }
 }
