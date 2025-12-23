@@ -38,8 +38,6 @@ export class Coachs implements OnInit{
 
   // État des données
   coachs = signal<any[]>([]);
-      // { id: '1', nom: 'Sophie Laurent', email: 'sophie.laurent@gym.com', specialite: 'Yoga' },
-    // { id: '2', nom: 'Marc Dubois', email: 'marc.dubois@gym.com', specialite: 'Musculation' },
 
   // État de l'UI
   isFormOpen = signal(false);
@@ -107,6 +105,11 @@ export class Coachs implements OnInit{
     }
     this.coachService.save(data).subscribe({
       next:(res:any)=>{
+                if(this.editingCoach()){
+                  Swal.fire('Modifié', 'Entraineur modifié avec succès', 'success');
+                }else{
+                  Swal.fire('Ajouté', 'Entraineur créé avec succès', 'success');
+                }
         this.getAllCoachs();
       }
     })
@@ -131,6 +134,5 @@ export class Coachs implements OnInit{
           }
         })
 
-    // this.coachs.update(list => list.filter(c => c.id !== id));
   }
 }

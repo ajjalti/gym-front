@@ -1,9 +1,13 @@
-import { Component, signal, computed, inject } from '@angular/core';
+import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { trigger, transition, style, animate } from '@angular/animations';
 
+import { Client as ClientService } from '../../services/client';
+import { Coach as CoachService } from '../../services/coach';
+import { Seance as SeanceService } from '../../services/seance';
+import Sweet from 'sweetalert2';
 @Component({
   selector: 'app-seances-manager',
   standalone: true,
@@ -18,64 +22,62 @@ import { trigger, transition, style, animate } from '@angular/animations';
     ])
   ]
 })
-export class Seances {
+export class Seances implements OnInit {
   private sanitizer = inject(DomSanitizer);
+  private clientService = inject(ClientService);
+  private coachService = inject(CoachService);
+  private seanceService = inject(SeanceService);
 
-  // Données
-  seances = signal<any[]>([
-    { id: '1', date: '2025-12-19', heure: '10:00', typeSeance: 'Yoga', coachId: '1', clientIds: ['1', '2'] },
-    { id: '2', date: '2025-12-19', heure: '14:00', typeSeance: 'Musculation', coachId: '2', clientIds: ['1'] },
-    { id: '3', date: '2025-12-20', heure: '09:00', typeSeance: 'Cardio', coachId: '1', clientIds: ['2'] },
-  ]);
+  seances = signal<any[]>([]);
+  clients = signal<any[]>([]);
+  coachs = signal<any[]>([]);
 
-  clients = signal<any[]>([
-    { id: '1', numeroClient: 'C001', nom: 'Jean Dupont', email: 'jean@email.com', dateInscription: '2025-01-15' },
-    { id: '2', numeroClient: 'C002', nom: 'Marie Martin', email: 'marie@email.com', dateInscription: '2025-02-01' },
-  ]);
+  // Enumération basée sur votre diagramme UML
+  typeSeanceEnum = ['MUSCULATION', 'YOGA', 'AEROBIC', 'CARDIO'];
 
-  coachs = signal<any[]>([
-    { id: '1', nom: 'Sophie Laurent', email: 'sophie@gym.com', specialite: 'Yoga' },
-    { id: '2', nom: 'Marc Dubois', email: 'marc@gym.com', specialite: 'Musculation' },
-  ]);
-
-  // État du Calendrier
   currentDate = signal(new Date());
-  selectedDate = signal<string | null>(null);
+  selectedDate = signal<string | null>(new Date().toISOString().split('T')[0]);
   isFormOpen = signal(false);
   editingSeance = signal<any>(null);
 
-  // Formulaire (Modèle simple)
+  // Synchronisé avec les champs du formulaire Figma
   formData = {
-    date: new Date().toISOString().split('T')[0],
+    date: '',
     heure: '10:00',
     typeSeance: '',
     coachId: '',
-    clientIds: [] as string[]
+    clientIds: [] as any[]
   };
 
-  // Icônes SVG
   readonly icons: Record<string, SafeHtml> = {
     plus: this.bypass(`<line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>`),
     chevronLeft: this.bypass(`<polyline points="15 18 9 12 15 6"></polyline>`),
     chevronRight: this.bypass(`<polyline points="9 18 15 12 9 6"></polyline>`),
-    clock: this.bypass(`<circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>`),
     edit: this.bypass(`<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>`),
     trash: this.bypass(`<polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>`),
-    award: this.bypass(`<circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>`),
-    users: this.bypass(`<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path>`)
+    clock: this.bypass(`<circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>`),
+    user: this.bypass(`<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>`),
+    users: this.bypass(`<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path>`),
   };
 
-  // --- Logique Calendrier ---
+  ngOnInit() {
+    this.refreshData();
+  }
+
+  refreshData() {
+    this.seanceService.getAll().subscribe(data => this.seances.set(data));
+    this.clientService.getAll().subscribe(data => this.clients.set(data));
+    this.coachService.getAll().subscribe(data => this.coachs.set(data));
+  }
+
   calendarData = computed(() => {
     const date = this.currentDate();
     const year = date.getFullYear();
     const month = date.getMonth();
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    
     const days: (number | null)[] = Array(firstDay).fill(null);
     for (let i = 1; i <= daysInMonth; i++) days.push(i);
-    
     return { days, year, month };
   });
 
@@ -83,26 +85,31 @@ export class Seances {
   dayNames = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 
   getSeancesForDate(dateStr: string) {
-    return this.seances().filter(s => s.date === dateStr).sort((a, b) => a.heure.localeCompare(b.heure));
+    return this.seances().filter(s => s.date === dateStr);
   }
 
-  changeMonth(delta: number) {
-    const next = new Date(this.currentDate());
-    next.setMonth(next.getMonth() + delta);
-    this.currentDate.set(next);
-  }
-
-  // --- Handlers ---
   handleDateClick(day: number) {
     const { year, month } = this.calendarData();
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     this.selectedDate.set(dateStr);
   }
 
+  toggleClientSelection(clientId: any) {
+    const index = this.formData.clientIds.indexOf(clientId);
+    if (index > -1) this.formData.clientIds.splice(index, 1);
+    else this.formData.clientIds.push(clientId);
+  }
+
   openForm(seance?: any, dateStr?: string) {
     if (seance) {
       this.editingSeance.set(seance);
-      this.formData = { ...seance };
+      this.formData = {
+        date: seance.date,
+        heure: seance.heure,
+        typeSeance: seance.typeSeance,
+        coachId: seance.coach?.id,
+        clientIds: seance.participants?.map((p: any) => p.id) || []
+      };
     } else {
       this.editingSeance.set(null);
       this.formData = {
@@ -117,27 +124,73 @@ export class Seances {
   }
 
   handleSubmit() {
-    if (this.editingSeance()) {
-      this.seances.update(list => list.map(s => s.id === this.editingSeance()?.id ? { ...this.formData, id: s.id } : s));
-    } else {
-      this.seances.update(list => [...list, { ...this.formData, id: Date.now().toString() }]);
-    }
-    this.closeForm();
+    const payload = {
+      id: this.editingSeance()?.id,
+      date: this.formData.date,
+      heure: this.formData.heure,
+      typeSeance: this.formData.typeSeance,
+      coach: { id: this.formData.coachId },
+      participants: this.formData.clientIds.map(id => ({ id: id }))
+    };
+
+    this.seanceService.save(payload).subscribe({
+      next: () => {
+        this.refreshData();
+        this.closeForm();
+
+        Sweet.fire({
+          title: 'Succès !',
+          text: 'La séance a été enregistrée avec succès.',
+          icon: 'success',
+          confirmButtonColor: '#2563eb',
+          timer: 2000
+        });
+      },
+      error: (err) => {
+        Sweet.fire('Erreur', "Impossible d'enregistrer la séance", 'error');
+      }
+    });
   }
 
-  handleDelete(id: string) {
-    this.seances.update(list => list.filter(s => s.id !== id));
+  handleDelete(id: any) {
+    Sweet.fire({
+      title: 'Êtes-vous sûr ?',
+      text: "",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#2563eb', // Bleu comme ton bouton "Ajouter"
+      cancelButtonColor: '#94a3b8',  // Gris ardoise
+      confirmButtonText: 'Oui, supprimer',
+      cancelButtonText: 'Annuler',
+      reverseButtons: true // Met l'annulation à gauche
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.seanceService.delete(id).subscribe({
+          next: () => {
+            this.refreshData();
+            // Notification de succès après suppression
+            Sweet.fire({
+              title: 'Supprimé !',
+              text: 'La séance a été supprimée.',
+              icon: 'success',
+              confirmButtonColor: '#2563eb',
+              timer: 1500
+            });
+          },
+          error: (err) => {
+            Sweet.fire('Erreur', 'Impossible de supprimer la séance', 'error');
+          }
+        });
+      }
+    });
   }
 
-  closeForm() {
-    this.isFormOpen.set(false);
-    this.editingSeance.set(null);
-  }
+  closeForm() { this.isFormOpen.set(false); }
 
-  getCoachName(id: string) { return this.coachs().find(c => c.id === id)?.nom || 'N/A'; }
-
-  getClientNames(ids: string[]) {
-    return this.clients().filter(c => ids.includes(c.id)).map(c => c.nom).join(', ');
+  changeMonth(delta: number) {
+    const next = new Date(this.currentDate());
+    next.setMonth(next.getMonth() + delta);
+    this.currentDate.set(next);
   }
 
   private bypass(svg: string) { return this.sanitizer.bypassSecurityTrustHtml(svg); }

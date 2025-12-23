@@ -46,6 +46,6 @@ export class Header {
   selectTab(tabId: string) {
     this.activeTab.set(tabId);
     this.router.navigateByUrl(tabId);
-    this.isMobileMenuOpen.set(false); // Ferme le menu mobile après clic
+    this.isMobileMenuOpen.set(false);
   }
 }

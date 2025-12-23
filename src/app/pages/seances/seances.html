@@ -1,43 +1,48 @@
-<div class="space-y-6">
-  <div class="flex justify-between items-center">
-    <h2 class="text-2xl font-bold text-slate-800">Calendrier des Séances</h2>
-    <button (click)="openForm()" class="bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 transition-transform hover:scale-110">
-      <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [innerHTML]="icons['plus']"></svg>
+<div class="space-y-6 p-6 bg-[#f8fafc] min-h-screen font-sans">
+
+  <div class="flex justify-between items-center px-2">
+    <h2 class="text-[20px] font-medium text-[#1e293b]">Calendrier des Séances</h2>
+    <button (click)="openForm()" class="bg-[#2563eb] text-white p-2.5 rounded-full shadow-lg hover:bg-blue-700 transition-all">
+      <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" [innerHTML]="icons['plus']"></svg>
     </button>
   </div>
 
-  <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-    <div class="flex items-center justify-between mb-6">
-      <button (click)="changeMonth(-1)" class="p-2 hover:bg-slate-100 rounded-lg">
+  <div class="bg-white rounded-[24px] shadow-sm border border-[#e2e8f0] p-8">
+    <div class="flex items-center justify-between mb-8 px-4">
+      <button (click)="changeMonth(-1)" class="p-2 text-slate-400 hover:text-blue-600 transition-colors">
         <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [innerHTML]="icons['chevronLeft']"></svg>
       </button>
-      <h3 class="text-lg font-bold">{{ monthNames[calendarData().month] }} {{ calendarData().year }}</h3>
-      <button (click)="changeMonth(1)" class="p-2 hover:bg-slate-100 rounded-lg">
+      <h3 class="text-[18px] font-medium text-[#334155] capitalize">
+        {{ monthNames[calendarData().month] }} {{ calendarData().year }}
+      </h3>
+      <button (click)="changeMonth(1)" class="p-2 text-slate-400 hover:text-blue-600 transition-colors">
         <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [innerHTML]="icons['chevronRight']"></svg>
       </button>
     </div>
 
     <div class="grid grid-cols-7 gap-2">
       @for (name of dayNames; track name) {
-        <div class="text-center text-slate-500 text-xs font-bold py-2 uppercase">{{ name }}</div>
+        <div class="text-center text-[#94a3b8] text-[13px] font-medium pb-4">{{ name }}</div>
       }
-      
+
       @for (day of calendarData().days; track $index) {
         @if (day === null) {
           <div class="aspect-square"></div>
         } @else {
           @let dateStr = calendarData().year + '-' + (calendarData().month + 1 | number:'2.0') + '-' + (day | number:'2.0');
-          <div (click)="handleDateClick(day)" 
-               class="aspect-square border rounded-xl p-2 cursor-pointer transition-all hover:bg-blue-50 relative group"
+          <div (click)="handleDateClick(day)"
+               class="aspect-square rounded-xl p-2 cursor-pointer transition-all border relative flex flex-col items-start justify-start gap-1 overflow-hidden"
                [class.bg-blue-50]="dateStr === selectedDate()"
-               [class.border-blue-500]="dateStr === selectedDate()">
-            <span class="text-sm font-medium">{{ day }}</span>
-            <div class="mt-1 space-y-1">
-              @for (s of getSeancesForDate(dateStr).slice(0, 2); track s.id) {
-                <div class="text-[10px] bg-green-100 text-green-700 px-1 py-0.5 rounded truncate">{{ s.heure }}</div>
-              }
-              @if (getSeancesForDate(dateStr).length > 2) {
-                <div class="text-[10px] text-slate-400">+{{ getSeancesForDate(dateStr).length - 2 }}</div>
+               [class.border-blue-400]="dateStr === selectedDate()"
+               [class.border-slate-100]="dateStr !== selectedDate()">
+
+            <span class="text-sm font-medium text-slate-500 mb-1">{{ day }}</span>
+
+            <div class="w-full space-y-1">
+              @for (s of getSeancesForDate(dateStr); track s.id) {
+                <div class="bg-[#dcfce7] text-[#166534] text-[10px] px-2 py-0.5 rounded-md w-full truncate font-medium border border-[#bbf7d0]">
+                  {{ s.heure }}
+                </div>
               }
             </div>
           </div>
@@ -47,53 +52,100 @@
   </div>
 
   @if (selectedDate()) {
-    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6" @fadeSlide>
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="font-bold">Séances du {{ selectedDate() | date:'fullDate':'':'fr-FR' }}</h3>
-        <button (click)="openForm(undefined, selectedDate()!)" class="text-sm bg-blue-50 text-blue-600 px-3 py-1 rounded-lg font-bold">Ajouter</button>
+    <div class="bg-white rounded-[24px] shadow-sm border border-[#e2e8f0] p-6 space-y-6" @fadeSlide>
+
+      <div class="flex justify-between items-center px-2">
+        <h4 class="text-[16px] font-medium text-[#334155]">
+          Séances du {{ selectedDate() | date:'EEEE d MMMM yyyy':'':'fr' }}
+        </h4>
+        <button (click)="openForm(null, selectedDate()!)" class="bg-[#2563eb] text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 hover:bg-blue-700 transition-all">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" [innerHTML]="icons['plus']"></svg>
+          Ajouter
+        </button>
       </div>
 
-      <div class="space-y-3">
+      <div class="space-y-4">
         @for (s of getSeancesForDate(selectedDate()!); track s.id) {
-          <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center">
-            <div>
-              <div class="flex items-center gap-2 mb-1">
-                <span class="font-bold text-slate-800">{{ s.typeSeance }}</span>
-                <span class="text-xs text-slate-500 flex items-center gap-1">
-                   <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [innerHTML]="icons['clock']"></svg> {{ s.heure }}
-                </span>
-              </div>
-              <p class="text-xs text-slate-600">Coach: {{ getCoachName(s.coachId) }} • {{ s.clientIds.length }} participants</p>
+          <div class="border border-[#f1f5f9] rounded-[18px] p-6 hover:bg-[#fcfdfe] transition-all relative group">
+
+            <div class="absolute top-6 right-6 flex gap-2">
+              <button (click)="openForm(s)" class="p-2 text-slate-400 hover:text-blue-600 transition-colors">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [innerHTML]="icons['edit']"></svg>
+              </button>
+              <button (click)="handleDelete(s.id)" class="p-2 text-slate-400 hover:text-red-600 transition-colors">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [innerHTML]="icons['trash']"></svg>
+              </button>
             </div>
-            <div class="flex gap-1">
-              <button (click)="openForm(s)" class="p-2 hover:text-blue-600"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [innerHTML]="icons['edit']"></svg></button>
-              <button (click)="handleDelete(s.id)" class="p-2 hover:text-red-600"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [innerHTML]="icons['trash']"></svg></button>
+
+            <div class="space-y-3">
+              <h5 class="text-[18px] font-semibold text-[#1e293b]">{{ s.typeSeance }}</h5>
+
+              <div class="flex items-center gap-2 text-[#64748b]">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [innerHTML]="icons['clock']"></svg>
+                <span class="text-[14px]">{{ s.heure }}</span>
+              </div>
+
+              <div class="flex items-center gap-2 text-[#64748b]">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [innerHTML]="icons['user']"></svg>
+                <span class="text-[14px]">Coach: <span class="text-[#334155] font-medium">{{ s.coach?.fullName }}</span></span>
+              </div>
+
+              <div class="space-y-1">
+                <div class="flex items-center gap-2 text-[#64748b]">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [innerHTML]="icons['users']"></svg>
+                  <span class="text-[14px]">{{ s.participants?.length || 0 }} participant{{ (s.participants?.length > 1) ? 's' : '' }}</span>
+                </div>
+                <div class="pl-6 flex flex-wrap gap-x-2">
+                  @for (p of s.participants; track p.id; let last = $last) {
+                    <span class="text-[12px] text-[#94a3b8]">{{ p.fullName }}{{ !last ? ',' : '' }}</span>
+                  }
+                </div>
+              </div>
             </div>
           </div>
         } @empty {
-          <p class="text-center text-slate-400 py-6">Aucune séance ce jour.</p>
+          <div class="text-center py-10 text-slate-400 italic text-sm">
+            Aucune séance prévue pour cette date.
+          </div>
         }
       </div>
     </div>
   }
 
   @if (isFormOpen()) {
-    <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div class="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl">
-        <h3 class="text-xl font-bold mb-6">{{ editingSeance() ? 'Modifier' : 'Nouvelle' }} Séance</h3>
-        <form (ngSubmit)="handleSubmit()" #f="ngForm" class="space-y-4">
-          <input [(ngModel)]="formData.typeSeance" name="type" placeholder="Type (Yoga, Cardio...)" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500" required>
-          <div class="flex gap-4">
-            <input type="date" [(ngModel)]="formData.date" name="date" class="flex-1 p-3 border rounded-xl outline-none" required>
-            <input type="time" [(ngModel)]="formData.heure" name="heure" class="flex-1 p-3 border rounded-xl outline-none" required>
+    <div class="fixed inset-0 bg-[#0f172a]/30 backdrop-blur-[2px] z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-[24px] w-full max-w-[480px] shadow-2xl overflow-hidden border border-white">
+        <div class="px-8 py-6">
+          <h3 class="text-[19px] font-medium text-[#1e293b]">{{ editingSeance() ? 'Modifier la' : 'Nouvelle' }} Séance</h3>
+        </div>
+        <form (ngSubmit)="handleSubmit()" #f="ngForm" class="px-8 pb-8 space-y-6">
+          <div class="space-y-2">
+            <label class="block text-[15px] font-medium text-slate-600">Type de Séance</label>
+            <select [(ngModel)]="formData.typeSeance" name="typeSeance" required
+                    class="w-full px-4 py-3.5 border border-[#e2e8f0] rounded-xl text-slate-800 bg-white focus:border-[#2563eb] outline-none appearance-none cursor-pointer">
+              <option value="" disabled>Sélectionner un type...</option>
+              @for (type of typeSeanceEnum; track type) { <option [value]="type">{{ type }}</option> }
+            </select>
           </div>
-          <select [(ngModel)]="formData.coachId" name="coach" class="w-full p-3 border rounded-xl outline-none" required>
-            <option value="">Choisir un coach</option>
-            @for (c of coachs(); track c.id) { <option [value]="c.id">{{ c.nom }}</option> }
+          <div class="grid grid-cols-2 gap-5">
+            <input type="date" [(ngModel)]="formData.date" name="date" required class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl">
+            <input type="time" [(ngModel)]="formData.heure" name="heure" required class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl">
+          </div>
+          <select [(ngModel)]="formData.coachId" name="coachId" required class="w-full px-4 py-3 border border-[#e2e8f0] rounded-xl">
+            <option value="" disabled>Sélectionner un coach</option>
+            @for (c of coachs(); track c.id) { <option [value]="c.id">{{ c.fullName }}</option> }
           </select>
-          <div class="flex gap-3 pt-4">
-            <button type="button" (click)="closeForm()" class="flex-1 py-3 text-slate-600">Annuler</button>
-            <button type="submit" [disabled]="f.invalid" class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold disabled:opacity-50">Confirmer</button>
+          <div class="border border-[#e2e8f0] rounded-xl max-h-[160px] overflow-y-auto p-2 bg-[#f8fafc]">
+            @for (client of clients(); track client.id) {
+              <div (click)="toggleClientSelection(client.id)" class="flex items-center p-2 cursor-pointer">
+                <div class="w-4 h-4 rounded border mr-2" [class.bg-blue-600]="formData.clientIds.includes(client.id)"></div>
+                <span class="text-sm">{{ client.fullName }}</span>
+              </div>
+            }
+          </div>
+          <div class="flex gap-4 pt-4">
+            <button type="button" (click)="closeForm()" class="flex-1 py-3 border rounded-xl">Annuler</button>
+            <button type="submit" [disabled]="f.invalid" class="flex-1 py-3 bg-[#2563eb] text-white rounded-xl">Enregistrer</button>
           </div>
         </form>
       </div>
