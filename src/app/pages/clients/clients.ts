@@ -71,7 +71,7 @@ export class Clients implements OnInit {
   paiementForm = this.fb.group({
     datePaiement: [new Date().toISOString().split('T')[0]],
     montant: [0, [Validators.required, Validators.min(0)]],
-    statut: ['en_attente', Validators.required],
+    statut: ['EN_ATTENTE', Validators.required],
   });
 
   abonnementForm = this.fb.group({
@@ -249,11 +249,11 @@ export class Clients implements OnInit {
     const paiements = abo.paiements || [];
 
     const paye = paiements
-      .filter((p: any) => p && p.statut === 'payé')
+      .filter((p: any) => p && p.statut === 'PAYE')
       .reduce((s: number, p: any) => s + (p.montant || 0), 0);
 
     const restant = paiements
-      .filter((p: any) => p && p.statut === 'en_attente')
+      .filter((p: any) => p && p.statut === 'EN_ATTENTE')
       .reduce((s: number, p: any) => s + (p.montant || 0), 0);
 
     return { paye, restant };
@@ -349,7 +349,7 @@ export class Clients implements OnInit {
     this.paiementForm.reset({
       datePaiement: new Date().toISOString().split('T')[0],
       montant: 0,
-      statut: 'en_attente',
+      statut: 'EN_ATTENTE',
     });
     this.isPaiementFormOpen.set(true);
   }
